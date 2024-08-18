@@ -1,0 +1,4 @@
+packages:
+  - ./@task/*
+  - ./@app/*
+  - ./packages/*

@@ -1,0 +1,26 @@
+{
+  "name": "task-customer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:all": "pnpm run -r --parallel --filter @app/* --filter @util/* build",
+    "build:util": "pnpm run -r --parallel --filter @util/* build",
+    "telegram": "pnpm --filter @app/telegram-uploader start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tsconfig/node-lts-strictest": "^18.12.1",
+    "@typescript-eslint/eslint-plugin": "^7.12.0",
+    "@typescript-eslint/parser": "^7.12.0",
+    "eslint": "^9.2.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-simple-import-sort": "^12.1.0",
+    "eslint-plugin-vue": "^9.26.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  }
+}
