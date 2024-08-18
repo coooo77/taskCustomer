@@ -3,7 +3,7 @@ import cp from 'child_process';
 export function getMediaDuration(filePath: string): number {
   try {
     const command = `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${filePath}`;
-    const stdout = cp.execSync(command).toString();
+    const stdout = cp.execSync(command, { timeout: 5000 }).toString();
     return parseFloat(stdout);
   } catch (error) {
     console.error(error);

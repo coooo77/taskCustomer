@@ -12,19 +12,23 @@ import type { OverlayOptions } from 'sharp';
 // 動態擷取幀並返回 Buffer
 function captureFrameBuffer(videoPath: string, time: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const ffmpegProcess = spawn('ffmpeg', [
-      '-ss',
-      time.toString(), // 設置起始時間
-      '-i',
-      videoPath, // 影片檔案路徑
-      '-frames:v',
-      '1', // 只擷取一個幀
-      '-f',
-      'image2pipe', // 指定輸出格式為 image2pipe
-      '-vcodec',
-      'png', // 使用 png 編碼
-      'pipe:1', // 輸出到 stdout
-    ]);
+    const ffmpegProcess = spawn(
+      'ffmpeg',
+      [
+        '-ss',
+        time.toString(), // 設置起始時間
+        '-i',
+        videoPath, // 影片檔案路徑
+        '-frames:v',
+        '1', // 只擷取一個幀
+        '-f',
+        'image2pipe', // 指定輸出格式為 image2pipe
+        '-vcodec',
+        'png', // 使用 png 編碼
+        'pipe:1', // 輸出到 stdout
+      ],
+      { timeout: 5000 },
+    );
 
     const buffers: Buffer[] = [];
     ffmpegProcess.stdout.on('data', (chunk) => {
@@ -119,6 +123,8 @@ export async function createThumbnail(
 
   // 獲取影片總長度
   const duration = await getMediaDuration(videoPath);
+  if (duration <= 0) throw Error(`Invalid duration received from ${videoPath}`);
+
   const times = calculateCaptureTimes(duration, row, col);
   const buffers = await captureFrames(videoPath, times, limit);
 
