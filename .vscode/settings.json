@@ -1,3 +1,10 @@
 {
-  "cSpell.words": ["fafafa", "ffprobe", "loglevel", "vcodec"]
+  "cSpell.words": [
+    "endlocal",
+    "fafafa",
+    "ffprobe",
+    "loglevel",
+    "setlocal",
+    "vcodec"
+  ]
 }
