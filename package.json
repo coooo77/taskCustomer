@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:all": "pnpm run -r --parallel --filter @app/* --filter @util/* build",
+    "build": "pnpm run -r --parallel --filter @app/* --filter @util/* build",
     "build:util": "pnpm run -r --parallel --filter @util/* build",
     "telegram": "pnpm --filter @app/telegram-uploader start"
   },

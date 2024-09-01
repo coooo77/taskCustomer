@@ -4,7 +4,7 @@ import path from 'path';
 import { cwd } from 'process';
 
 fs.writeFileSync(
-  'run2.bat',
+  'run.bat',
   `
   @echo off
   setlocal
