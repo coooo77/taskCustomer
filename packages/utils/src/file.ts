@@ -16,13 +16,26 @@ export function makeDirIfNotExist(fileLocation?: string) {
 }
 
 export async function getFileSizeInGB(filePath: string) {
-  if (!filePath) throw new Error(`Invalid file path`);
+  return getFileSize(filePath, 'GB');
+}
+
+export async function getFileSize(
+  filePath: string,
+  unit: 'GB' | 'MB' = 'MB',
+): Promise<number> {
+  if (!filePath) throw new Error('Invalid file path');
 
   const stats = await fsPromise.stat(filePath);
   const fileSizeInBytes = stats.size;
-  const fileSizeInGB = fileSizeInBytes / (1024 * 1024 * 1024);
 
-  return fileSizeInGB;
+  switch (unit) {
+    case 'GB':
+      return fileSizeInBytes / (1024 * 1024 * 1024);
+    case 'MB':
+      return fileSizeInBytes / (1024 * 1024);
+    default:
+      throw new Error(`Unsupported unit: ${unit}`);
+  }
 }
 
 export function moveFileInSameDisk(

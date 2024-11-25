@@ -1,0 +1,23 @@
+{
+  "name": "ffmpegtest",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index",
+    "dev": "npm run build && npm start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@util/utils": "workspace:^",
+    "shell-quote": "^1.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.11",
+    "@types/shell-quote": "^1.7.5"
+  }
+}

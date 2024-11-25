@@ -1,10 +1,23 @@
 {
   "cSpell.words": [
+    "atempo",
     "endlocal",
     "fafafa",
     "ffprobe",
+    "lavfi",
+    "libx",
+    "llhp",
+    "llhq",
     "loglevel",
+    "losslesshp",
+    "nvenc",
     "setlocal",
-    "vcodec"
+    "setpts",
+    "ssim",
+    "superfast",
+    "ultrafast",
+    "vcodec",
+    "veryfast",
+    "veryslow"
   ]
 }
