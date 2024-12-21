@@ -8,7 +8,7 @@
   "scripts": {
     "build": "npx tsc -p tsconfig.build.json",
     "start": "node dist/index",
-    "create": "node dist/createBat"
+    "batch": "node dist/createBat"
   },
   "keywords": [],
   "author": "",

@@ -9,9 +9,7 @@ fs.writeFileSync(
   @echo off
   setlocal
 
-  set "current_dir=%~dp0"
-
-  node ${path.join(cwd(), 'dist/index.js')} %current_dir% --ext=mp4 --ext=ts --limit=5
+  node ${path.join(cwd(), 'dist/index.js')} --folderPath "%CD%" %*
 
   endlocal
   `,
