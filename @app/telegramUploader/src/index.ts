@@ -8,14 +8,11 @@ import clipboard from 'clipboardy';
 
 import {
   wait,
-  getPromptFn,
   getFileWithExt,
   getFileSizeInGB,
   makeDirIfNotExist,
   moveFileInSameDisk,
 } from '@util/utils';
-
-const jobDonePrompt = getPromptFn('jobs done...');
 
 const position = {
   // 上傳迴紋針圖案
@@ -173,10 +170,7 @@ async function main() {
     }
   }
 
-  if (filesOver2GBList.length === 0) {
-    await jobDonePrompt();
-    return;
-  }
+  if (filesOver2GBList.length === 0) return;
 
   const over2GBFolder = makeDirIfNotExist(
     path.join(folderPath, 'over_2_gb_videos'),
@@ -185,8 +179,6 @@ async function main() {
   filesOver2GBList.forEach((f) =>
     moveFileInSameDisk(f, folderPath, over2GBFolder),
   );
-
-  await jobDonePrompt();
 }
 
 main();
