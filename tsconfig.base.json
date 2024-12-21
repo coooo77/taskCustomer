@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node-lts-strictest/tsconfig.json",
+  "extends": "@tsconfig/node22",
   "compilerOptions": {
     /* Basic Options */
     "incremental": true,

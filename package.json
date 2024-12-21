@@ -7,6 +7,7 @@
     "build": "pnpm run -r --parallel --filter @app/* --filter @util/* build",
     "build:util": "pnpm run -r --parallel --filter @util/* build",
     "build:init": "pnpm build:util && pnpm build",
+    "batch": "pnpm run -r --parallel --filter @app/* batch",
     "telegram": "pnpm --filter @app/telegram-uploader start",
     "clear": "pnpm dlx rimraf@3 node_modules **/*/node_modules"
   },
@@ -14,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@tsconfig/node-lts-strictest": "^18.12.1",
+    "@tsconfig/node22": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^7.12.0",
     "@typescript-eslint/parser": "^7.12.0",
     "eslint": "^9.2.0",
