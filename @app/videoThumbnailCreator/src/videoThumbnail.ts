@@ -11,6 +11,7 @@ import type { OverlayOptions } from 'sharp';
 
 // 動態擷取幀並返回 Buffer
 function captureFrameBuffer(videoPath: string, time: number): Promise<Buffer> {
+  const timeout = __CUSTOM_PARAM.timeout ? __CUSTOM_PARAM.timeout * 1000 : 5000;
   return new Promise((resolve, reject) => {
     const ffmpegProcess = spawn(
       'ffmpeg',
@@ -27,7 +28,7 @@ function captureFrameBuffer(videoPath: string, time: number): Promise<Buffer> {
         'png', // 使用 png 編碼
         'pipe:1', // 輸出到 stdout
       ],
-      { timeout: 5000 },
+      { timeout },
     );
 
     const buffers: Buffer[] = [];
@@ -40,7 +41,10 @@ function captureFrameBuffer(videoPath: string, time: number): Promise<Buffer> {
       resolve(buffer);
     });
 
-    ffmpegProcess.on('error', (err) => reject(err));
+    ffmpegProcess.on('error', (err) => {
+      if (__CUSTOM_PARAM.debug) console.log('ffmpeg get buffer error', err);
+      reject(err);
+    });
   });
 }
 
@@ -96,30 +100,20 @@ function createTimestampLayer(
 }
 
 // 參數接口
-export interface CreateThumbnailParams {
-  col?: number; // 列數，預設值 3
-  row?: number; // 行數，預設值 3
-  thumbnailFilePath?: string; // 縮圖路徑
-  width?: number; // 縮圖寬度，預設 1024px
-  limit?: number; // buffer 同步擷取數量，預設值 3
-  withTimestamp?: boolean; // 每截圖是否要在截圖下方顯示該截圖擷取的時間 Timestamp，預設 true
-}
 
 // 合併圖片並在最上面顯示檔案名稱
-export async function createThumbnail(
-  videoPath: string,
-  options: CreateThumbnailParams = {},
-): Promise<void> {
+export async function createThumbnail(videoPath: string): Promise<void> {
   const parse = path.parse(videoPath);
 
   const {
+    debug,
     col = 3,
     row = 3,
-    width = 1024,
     limit = 3,
+    width = 1024,
     withTimestamp = true,
     thumbnailFilePath = path.join(parse.dir, `${path.basename(videoPath)}.jpg`),
-  } = options;
+  } = global.__CUSTOM_PARAM;
 
   // 獲取影片總長度
   const duration = await getMediaDuration(videoPath);
@@ -209,7 +203,8 @@ export async function createThumbnail(
   thumbnail
     .composite([{ input: textLayer, top: 0, left: 0 }, ...compositeImages])
     .toFile(thumbnailFilePath, (err, info) => {
-      if (err) console.error(err);
-      console.log('Thumbnail created:', info);
+      if (err) return console.error(err);
+      if (debug) console.log('debug', info);
+      console.log('Thumbnail created:', thumbnailFilePath);
     });
 }

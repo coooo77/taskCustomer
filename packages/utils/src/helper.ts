@@ -42,3 +42,35 @@ export function getPromptFn(msg: string) {
 export function wait(ms: number) {
   return new Promise((res) => setTimeout(res, ms));
 }
+
+interface RetryFnOptions {
+  name?: string;
+  maxRetries?: number;
+  retryDelayInSec?: number;
+}
+
+export async function retryFn<T extends () => any>(
+  cb: T,
+  options: RetryFnOptions = {},
+) {
+  const { name = 'Task', maxRetries = 5, retryDelayInSec = 1000 } = options;
+
+  let err: unknown;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res: ReturnType<T> = await cb();
+      return res;
+    } catch (error) {
+      err = error;
+      console.log(`${name} failed ${i + 1} times, wait ${retryDelayInSec} ms.`);
+      await wait(retryDelayInSec);
+    }
+  }
+
+  throw err;
+}
+
+export function padStart0(value: any, num = 3) {
+  return String(value).padStart(num, '0');
+}
