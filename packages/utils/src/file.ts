@@ -38,6 +38,46 @@ export async function getFileSize(
   }
 }
 
+export function getReadableFileSizeString(fileSizeInBytes: number) {
+  let i = -1;
+  const byteUnits = [' kB', ' MB', ' GB', ' TB', 'PB', 'EB', 'ZB', 'YB'];
+  do {
+    fileSizeInBytes = fileSizeInBytes / 1024;
+    i++;
+  } while (fileSizeInBytes > 1024);
+
+  return Math.max(fileSizeInBytes, 0.1).toFixed(1) + byteUnits[i];
+}
+
+export function humanReadableToBytes(sizeStr: string) {
+  const units = {
+    B: 1,
+    KB: 1024,
+    MB: 1024 ** 2,
+    GB: 1024 ** 3,
+    TB: 1024 ** 4,
+    PB: 1024 ** 5,
+  };
+
+  const match = sizeStr.match(/^(\d+(?:\.\d+)?)([A-Za-z]+)$/);
+
+  if (!match) {
+    throw new Error('Invalid size format. Example: "1MB", "2GB", "3TB".');
+  }
+
+  const [, numStr, unit] = match;
+  const num = parseFloat(numStr);
+  const upperUnit = unit.toUpperCase();
+
+  if (!(upperUnit in units)) {
+    throw new Error(
+      `Unsupported unit: ${unit}. Supported units are: ${Object.keys(units).join(', ')}`,
+    );
+  }
+
+  return num * units[upperUnit as keyof typeof units];
+}
+
 export function moveFileInSameDisk(
   filename: string,
   fromDir: string,
