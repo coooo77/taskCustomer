@@ -2,67 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import cp from 'child_process';
 import { parse } from 'shell-quote';
+
+import { configs } from './configs';
 import { getFileWithExt, secondsToHMS, getFileSize } from '@util/utils';
 
-interface Config {
-  key: string;
-  value: (string | null)[];
-}
-
-interface TestConfigs {
-  speed: Config[];
-  preset: Config[];
-  quality: Config[];
-}
-
-/**
- 有參數的情況下，會寫入 key + value
- 空字串則是寫入 key
- null 則是不帶入該參數
- */
-const configs: TestConfigs = {
-  quality: [
-    // {
-    //   key: '-b',
-    //   value: ['350k', '1M'],
-    // },
-    {
-      key: '-b:v',
-      value: ['150k', '350K', '700k'],
-    },
-    {
-      key: '-cq',
-      value: ['18', '21', '30'],
-    },
-    {
-      key: '-crf',
-      value: ['18', '21', '30'],
-    },
-  ],
-  speed: [
-    // 加速同時需要去除音軌、或者加速音軌 -filter_complex "[0:v]setpts=PTS/4[v];[0:a]atempo=4[a]"
-    {
-      key: '-an -filter:v',
-      value: ['setpts=PTS/2', 'setpts=PTS/4', null],
-    },
-
-    {
-      key: '-an',
-      value: ['', null],
-    },
-  ],
-  preset: [
-    {
-      key: '-vcodec libx264 -preset',
-      value: ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast'],
-    },
-    {
-      // 相關參數用 ffmpeg -h encoder=h264_nvenc 查詢
-      key: '-vcodec h264_nvenc -preset',
-      value: ['p1', 'p4', 'p7', 'hq', 'fast', 'slow', 'medium'],
-    },
-  ],
-};
+import type { Config } from './configs';
 
 function getIndex(index: number) {
   return String(index).padStart(3, '0');
@@ -78,7 +22,10 @@ function getConfigs(c: Config[]) {
   return c.reduce((setting, item) => {
     const { key, value } = item;
     for (const v of value) {
-      if (v === null) continue;
+      if (v === null) {
+        setting.push('');
+        continue;
+      }
 
       if (v === '') {
         setting.push(key);
@@ -96,46 +43,58 @@ function sanitizeFilename(input: string): string {
   return input.replace(/[^a-zA-Z0-9-_]/g, '_');
 }
 
+function addConfigs(source: string[], newConfig: string[]) {
+  return newConfig.flatMap((n) =>
+    source.map((s) => (s && n ? `${s} ${n}` : s || n)),
+  );
+}
+
+function recursiveGetConfig(configGroup: string[][], output: string[] = []) {
+  for (let i = 0; i < configGroup.length; i++) {
+    const configs = configGroup[i]!;
+
+    if (output.length === 0)
+      return recursiveGetConfig(configGroup.slice(1), configs);
+
+    const nextConfig = configGroup[i + 1]!;
+    if (!nextConfig) return addConfigs(output, configs);
+
+    return recursiveGetConfig(
+      configGroup.slice(1),
+      addConfigs(output, configs),
+    );
+  }
+
+  return output;
+}
+
+function getFFmpegSettings() {
+  return Array.from(
+    new Set(recursiveGetConfig(configs.map(getConfigs))),
+  ).sort();
+}
+
 interface ExportConfig {
   cmd: string;
   index: string;
-  configString: string;
+  ffmpegSetting: string;
   outputFilePath: string;
 }
 
-function generateConfig(samplePath: string) {
-  const { quality, speed, preset } = configs;
-
-  const cmds: ExportConfig[] = [];
-
-  const sConfigs = getConfigs(speed);
-  const pConfigs = getConfigs(preset);
-  const qConfigs = getConfigs(quality);
-
-  let index = 0;
-
-  for (const q of qConfigs) {
-    for (const s of sConfigs) {
-      for (const p of pConfigs) {
-        index++;
-        const qConfig = q ? ` ${q}` : '';
-        const pConfig = p ? ` ${p}` : '';
-        const sConfig = s ? ` ${s}` : '';
-        const configString = `${qConfig}${pConfig}${sConfig}`;
-
-        const filename = generateOutputPath(samplePath, index);
-        const cmd = `-i "${samplePath}" -y${configString} "${filename}"`;
-        cmds.push({
-          cmd,
-          configString,
-          index: getIndex(index),
-          outputFilePath: filename,
-        });
-      }
-    }
-  }
-
-  return cmds;
+function generateConfig(
+  samplePath: string,
+  ffmpegSettings: string[],
+): ExportConfig[] {
+  return ffmpegSettings.map((fSettings, index) => {
+    const filename = generateOutputPath(samplePath, index);
+    const cmd = `-i "${samplePath}" -y ${fSettings} "${filename}"`;
+    return {
+      cmd,
+      ffmpegSetting: fSettings,
+      index: getIndex(index),
+      outputFilePath: filename,
+    };
+  });
 }
 
 function getDurationInSec(startTime: Date, endTime: Date) {
@@ -150,10 +109,10 @@ interface TestResult {
 
 interface ExportTestResult extends TestResult {
   index: string;
-  configString: string;
   compressRatio: string;
   inputFilePath: string;
   outputFilePath: string;
+  ffmpegSettings: string;
 }
 
 function testSample(cmd: string): Promise<TestResult> {
@@ -200,7 +159,7 @@ function renameOutputFilename(s: ExportTestResult) {
 
   const { name, ext, dir } = path.parse(s.outputFilePath);
 
-  const newName = `${name}_${sanitizeFilename(s.configString)}_${s.duration}${ext}`;
+  const newName = `${name}_${sanitizeFilename(s.ffmpegSettings)}_${s.duration}${ext}`;
   const newFilePath = path.join(dir, newName);
   fs.renameSync(s.outputFilePath, newFilePath);
 }
@@ -224,13 +183,16 @@ async function main() {
   const testResultFilename = `test_results_${Date.now()}.json`;
   const testResultFilePath = path.join(__dirname, testResultFilename);
 
+  const ffmpegSettings = getFFmpegSettings();
+  console.log(`${ffmpegSettings.length} cmds generated.`);
+
   for (const s of samples) {
     const inputFilePath = path.join(sampleDir, s);
-    const configs = generateConfig(inputFilePath);
+    const configs = generateConfig(inputFilePath, ffmpegSettings);
     const inputFileSize = await getFileSize(inputFilePath);
 
     for (const c of configs) {
-      const { cmd, index, configString, outputFilePath } = c;
+      const { cmd, index, ffmpegSetting, outputFilePath } = c;
 
       const res = await testSample(cmd);
 
@@ -247,7 +209,7 @@ async function main() {
         index,
         inputFilePath,
         outputFilePath,
-        configString,
+        ffmpegSettings: ffmpegSetting,
         compressRatio: compressRatio.toFixed(2),
       };
       renameOutputFilename(result);

@@ -5,6 +5,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build-list": "npm run build && node dist/buildConfigList",
     "start": "node dist/index",
     "dev": "npm run build && npm start"
   },
