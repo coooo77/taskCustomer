@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "probe": "node dist/probe",
+    "bat": "node ./dist/createBat.js",
     "start": "node dist/index"
   },
   "keywords": [],
@@ -20,5 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.11"
+  },
+  "engines": {
+    "python": ">=3.6.0",
+    "node-gyp": "^9.3.1"
   }
 }
