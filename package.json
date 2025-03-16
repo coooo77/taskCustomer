@@ -7,6 +7,7 @@
     "build": "pnpm run -r --parallel --filter @app/* --filter @util/* build",
     "build:util": "pnpm run -r --parallel --filter @util/* build",
     "build:init": "pnpm build:util && pnpm build",
+    "build:pkg": "pnpm approve-builds",
     "batch": "pnpm run -r --parallel --filter @app/* batch",
     "telegram": "pnpm --filter @app/telegram-uploader start",
     "clear": "pnpm dlx rimraf@3 node_modules **/*/node_modules"

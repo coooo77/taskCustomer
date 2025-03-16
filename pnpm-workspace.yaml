@@ -2,3 +2,6 @@ packages:
   - ./@task/*
   - ./@app/*
   - ./packages/*
+onlyBuiltDependencies:
+  - robotjs
+  - sharp
