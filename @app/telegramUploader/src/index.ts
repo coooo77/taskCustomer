@@ -4,6 +4,7 @@
 import fs from 'fs';
 import path from 'path';
 import robot from 'robotjs';
+import { fileURLToPath } from 'url';
 import clipboard from 'clipboardy';
 
 import {
@@ -14,6 +15,24 @@ import {
   moveFileInSameDisk,
 } from '@util/utils';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const positionFilePath = path.join(__dirname, './position.json');
+const calibrateFileExist = fs.existsSync(positionFilePath);
+
+if (!calibrateFileExist) {
+  console.error(
+    'position.json not found, use "pnpm probe" to create position.json',
+  );
+  await wait(5000);
+  process.exit(1);
+}
+
+const calibratePosition = calibrateFileExist
+  ? JSON.parse(fs.readFileSync(positionFilePath, 'utf8'))
+  : {};
+
 const position = {
   // 上傳迴紋針圖案
   uploadBtn: { x: 709, y: 1007, color: ['fafafa'] },
@@ -23,6 +42,7 @@ const position = {
   choseInput: { x: 646, y: 475, color: ['ffffff'] },
   // modal 出現的背景灰
   captionInput: { x: 1636, y: 1016, color: ['808080'] },
+  ...calibratePosition,
 };
 
 interface MoveToAndClickOptions {
