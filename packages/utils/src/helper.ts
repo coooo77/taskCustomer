@@ -24,7 +24,7 @@ export function secondsToHMS(seconds: number) {
 }
 
 export function getPromptFn(msg: string) {
-  const rl = readline.createInterface({
+  let rl: readline.Interface | null = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     terminal: false,
@@ -32,9 +32,10 @@ export function getPromptFn(msg: string) {
 
   return () =>
     new Promise<string>((resolve) => {
-      rl.question(msg, (reply) => {
-        rl.close();
+      rl!.question(msg, (reply) => {
+        rl!.close();
         resolve(reply);
+        rl = null;
       });
     });
 }

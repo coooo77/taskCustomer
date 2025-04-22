@@ -1,5 +1,6 @@
 import path from 'path';
 import cp from 'child_process';
+import promiseFs from 'fs/promises';
 
 interface GetMediaDurationOptions {
   timeout?: number;
@@ -59,6 +60,7 @@ export function isVideoFile(filePath: string) {
   }
 }
 
+// #region 分割影片
 interface SplitVideoOptions {
   debug?: boolean;
   exportPath?: string;
@@ -80,7 +82,7 @@ export function splitVideo(
       const task = cp.spawn('ffmpeg', cmds.split(' '));
 
       if (options.debug) {
-        console.log(`[FFMPEG]: split cmds: ${cmds}`);
+        console.log(`[FFMPEG]: split cmds: ${cmds}\r\n`);
         task.stderr.on('data', (d) => console.log(d.toString()));
       }
 
@@ -92,3 +94,183 @@ export function splitVideo(
     }
   });
 }
+// #endregion
+
+// #region 剪輯影片
+interface ClipVideoOptions {
+  start: string;
+  to: string;
+  debug?: boolean;
+  suffix?: string;
+  exportExt?: string;
+  exportPath?: string;
+  ffmpegSetting?: string;
+}
+
+interface ClipVideoResult {
+  filename: string;
+  exportFilePath: string;
+}
+
+export function clipVideo(
+  filePath: string,
+  options: ClipVideoOptions,
+): Promise<ClipVideoResult> {
+  const {
+    start,
+    to,
+    suffix = '_edit',
+    exportExt,
+    exportPath,
+    ffmpegSetting,
+  } = options;
+  const { name, dir } = path.parse(filePath);
+
+  const exportVideoDirPath = exportPath || dir;
+
+  if (!start && !to)
+    throw Error(
+      `fail to clip video: ${filePath} due to neither start time nor to time is provided`,
+    );
+
+  const startTime = start ? `-ss ${start} ` : '';
+  const toTime = to ? `-to ${to} ` : '';
+  const setting = ffmpegSetting ? ` ${ffmpegSetting}` : '';
+
+  const ext = exportExt
+    ? exportExt.startsWith('.')
+      ? exportExt
+      : `.${exportExt}`
+    : '.mp4';
+  const exportVideoFilename = `${name}${suffix}${ext}`;
+  const exportVideoFilePath = path.join(
+    exportVideoDirPath,
+    exportVideoFilename,
+  );
+
+  const cmds = `${startTime}-i ${filePath} ${toTime}-c copy${setting} ${exportVideoFilePath}`;
+
+  const payload = {
+    filename: exportVideoFilename,
+    exportFilePath: exportVideoFilePath,
+  };
+
+  return new Promise((resole, reject) => {
+    try {
+      const task = cp.spawn('ffmpeg', cmds.split(' '));
+
+      if (options.debug) {
+        console.log(`[FFMPEG]: clip cmds: ${cmds}; pid:${task?.pid}\r\n`);
+        task.stderr.on('data', (d) => console.log(d.toString()));
+      }
+
+      task.on('close', () => resole(payload));
+    } catch (error) {
+      console.error(error);
+
+      reject(payload);
+    }
+  });
+}
+// #endregion
+
+// #region 合併影片
+async function makeCombineList(fileFullPaths: string[]) {
+  if (fileFullPaths.length === 0 || fileFullPaths.length === 1)
+    throw new Error('invalid number of files, two files required at least.');
+
+  const { dir } = path.parse(fileFullPaths[0]);
+  const listPath = path.join(dir, `combine-list-${Date.now()}.txt`);
+
+  const txt = fileFullPaths
+    .map((filename) => `file '${filename.replace(/\\/g, '/')}'`)
+    .join('\r\n');
+
+  await promiseFs.writeFile(listPath, txt);
+
+  return listPath;
+}
+
+async function removeCombineList(listPath: string) {
+  await promiseFs.unlink(listPath);
+}
+
+interface CombineVideosOptions {
+  debug?: boolean;
+  suffix?: string;
+  exportExt?: string;
+  exportPath?: string;
+  ffmpegSetting?: string;
+  exportFileName?: string;
+}
+
+export async function combineVideos(
+  fileFullPaths: string[],
+  options: CombineVideosOptions = {},
+): Promise<void> {
+  if (fileFullPaths.length === 0 || fileFullPaths.length === 1)
+    throw new Error('invalid number of files, two files required at least.');
+
+  const {
+    suffix = '_combine',
+    exportExt,
+    exportPath,
+    ffmpegSetting,
+    exportFileName,
+  } = options;
+
+  const combineListPath = await makeCombineList(fileFullPaths);
+
+  const [firstFile] = fileFullPaths;
+  const { name, ext, dir } = path.parse(firstFile);
+  const parseExportFileName = path.parse(exportFileName || '')?.name;
+
+  const exportVideoDirPath = exportPath || dir;
+  const extension = exportExt
+    ? exportExt.startsWith('.')
+      ? exportExt
+      : `.${exportExt}`
+    : ext;
+  const exportVideoFilename = `${parseExportFileName || name}${suffix}${extension}`;
+  const exportVideoFilePath = path.join(
+    exportVideoDirPath,
+    exportVideoFilename,
+  );
+
+  const args = [
+    '-f',
+    'concat',
+    '-safe',
+    '0',
+    '-i',
+    combineListPath,
+    '-y',
+    ...(ffmpegSetting ? ffmpegSetting.split(' ') : []),
+    '-c',
+    'copy',
+    exportVideoFilePath,
+  ];
+
+  return new Promise((resolve, reject) => {
+    try {
+      const task = cp.spawn('ffmpeg', args);
+
+      if (options.debug) {
+        console.log(
+          `[FFMPEG]: clip cmds: ${args.join(' ')}; pid:${task?.pid}\r\n`,
+        );
+        task.stderr.on('data', (d) => console.log(d.toString()));
+      }
+
+      task.on('close', () => {
+        removeCombineList(combineListPath);
+        resolve();
+      });
+    } catch (error) {
+      console.error(error);
+
+      reject();
+    }
+  });
+}
+// #endregion

@@ -1,0 +1,26 @@
+{
+  "name": "@app/video-clip-combiner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "npx tsc -p tsconfig.build.json",
+    "start": "node dist/index",
+    "batch": "node dist/createBat"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@util/utils": "workspace:^",
+    "lodash-es": "^4.17.21",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.12.11"
+  }
+}

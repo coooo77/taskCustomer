@@ -107,3 +107,9 @@ export function moveFileInSameDisk(
 
   fs.renameSync(from, to);
 }
+
+export async function removeFile(filePath: string) {
+  if (!filePath) throw new Error('Invalid file path');
+  if (!fs.existsSync(filePath)) return;
+  await fsPromise.unlink(filePath);
+}

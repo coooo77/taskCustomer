@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "debugging for videoClipCombiner",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/@app/videoClipCombiner/dist/index.js",
+      "args": ["--folderPath", "${input:folderPath}", "--debug"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "folderPath",
+      "type": "promptString",
+      "description": "Enter folder path"
+    }
+  ]
+}
