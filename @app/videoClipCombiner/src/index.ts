@@ -85,7 +85,13 @@ async function main() {
     return;
   }
 
-  for (const clipItem of editSettingJson) {
+  const clipItems = editSettingJson.filter((item) => {
+    const isValid = item.clips.every((clip) => !!clip.start || !!clip.to);
+    if (!isValid) console.warn(`invalid clip item found: ${item.filename}`);
+    return isValid;
+  });
+
+  for (const clipItem of clipItems) {
     const { filename, clips, noCombine, keepChunk } = clipItem;
     const clipFileFullPath = path.join(folderPath, filename);
 

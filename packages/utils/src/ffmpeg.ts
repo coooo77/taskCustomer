@@ -97,6 +97,19 @@ export function splitVideo(
 // #endregion
 
 // #region 剪輯影片
+function toValidDuration(str: string) {
+  if (/^\d{6}$/.test(str)) {
+    const hour = str.substring(0, 2);
+    const minute = str.substring(2, 4);
+    const second = str.substring(4, 6);
+    return `${hour}:${minute}:${second}`;
+  } else if (/(\d{2})\:(\d{2})\:(\d{2})/.test(str)) {
+    return str;
+  } else {
+    throw new Error(`invalid time format: ${str}`);
+  }
+}
+
 interface ClipVideoOptions {
   start: string;
   to: string;
@@ -133,8 +146,8 @@ export function clipVideo(
       `fail to clip video: ${filePath} due to neither start time nor to time is provided`,
     );
 
-  const startTime = start ? `-ss ${start} ` : '';
-  const toTime = to ? `-to ${to} ` : '';
+  const startTime = start ? `-ss ${toValidDuration(start)} ` : '';
+  const toTime = to ? `-to ${toValidDuration(to)} ` : '';
   const setting = ffmpegSetting ? ` ${ffmpegSetting}` : '';
 
   const ext = exportExt
@@ -148,7 +161,7 @@ export function clipVideo(
     exportVideoFilename,
   );
 
-  const cmds = `${startTime}-i ${filePath} ${toTime}-c copy${setting} ${exportVideoFilePath}`;
+  const cmds = `-i ${filePath} ${startTime}${toTime}-c copy${setting} ${exportVideoFilePath}`;
 
   const payload = {
     filename: exportVideoFilename,
